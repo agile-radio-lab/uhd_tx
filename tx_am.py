@@ -20,10 +20,12 @@ import numpy as np
 def mod_am(t, freq, amp=.05):
     return amp*np.exp(2j*np.pi*freq*t)
 
+def mod_am1(t, freq, amp=.05):
+    return amp*np.cos(2*np.pi*freq*t)
 
-addr = "192.168.11.2"
-rate = 5e6
-wave_freq = 500e3
+addr = "192.168.11.4"
+rate = 800e3
+wave_freq = 100e3
 gain = 0
 channels = [0]
 freq = 900e6
@@ -56,7 +58,8 @@ smps = 0
 step = 0
 screen_id = 0
 
-samples_buffer = mod_am(t, 100e3) + mod_am(t, -50e3)
+samples_buffer = mod_am1(t, wave_freq) 
+# samples_buffer = mod_am(t, 100e3) + mod_am(t, -50e3)
 while running:
     try:
         streamer.send(samples_buffer, metadata)
