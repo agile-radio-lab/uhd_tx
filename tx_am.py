@@ -11,58 +11,52 @@ __date__ = "101/2020"
 __license__ = ""
 
 
-import random
 import uhd
-import time
-import numpy as np
-
-
-def mod_am(t, freq, amp=.05):
-    return amp*np.exp(2j*np.pi*freq*t)
-
-def mod_am1(t, freq, amp=.05):
-    return amp*np.cos(2*np.pi*freq*t)
-
-addr = "192.168.11.4"
-rate = 800e3
-wave_freq = 100e3
-gain = 0
-channels = [0]
-freq = 900e6
-modulation_index = 1
+from helper import *
 
 st_args = uhd.usrp.StreamArgs("fc32", "sc16")
-
-usrp = uhd.usrp.MultiUSRP("addr=%s" % addr)
-usrp.set_tx_rate(rate, 0)
-usrp.set_tx_freq(uhd.types.TuneRequest(freq), 0)
-usrp.set_tx_gain(gain, 0)
+usrp = uhd.usrp.MultiUSRP("IP_ADDRESS=%s" % IP_ADDRESS)
+usrp.set_tx_rate(RATE, 0)
+usrp.set_tx_freq(uhd.types.TuneRequest(CARRIER_FREQUENCY), 0)
+usrp.set_tx_gain(GAIN, 0)
 
 streamer = usrp.get_tx_stream(st_args)
 max_num_samples = streamer.get_max_num_samps()
-print("Max samples: %d" % max_num_samples)
-n_samples = max_num_samples
-duration = n_samples / rate
-
-t = np.linspace(0, duration, n_samples, dtype=np.complex64)
 
 metadata = uhd.types.TXMetadata()
 metadata.start_of_burst = False
 metadata.end_of_burst = False
 metadata.has_time_spec = False
 
+##### LOOP For Genetating a OFDM-Like Signal 
+
+#amp= 0.05
+#for i in range(2):
+#    samples_buffer_1 = type_of_sequence["exp"](t, SOURCE_FREQUENCY,amp) 
+#    samples_buffer_2 = type_of_sequence["exp-"](t, SOURCE_FREQUENCY,amp) 
+#    samples_buffer +=    samples_buffer_1+samples_buffer_2
+#    SOURCE_FREQUENCY*=2
+#    amp*=2
+#######
+
+#####  Generate the IQ samples (Choose one sequence: ones, zeros, cos, exp, neg_exp, square, manual ), 
+# Note: Manual is read from the json file data.json
+
+samples_buffer = type_of_sequence["exp"]() 
+#######
+
+#####  Write the Tx signal info into a json file
+iq_samples_as_str = [str(iq_sample) for iq_sample in samples_buffer]
+data = write_data_to_dict(RATE,SOURCE_FREQUENCY,GAIN,CHANNELS,CARRIER_FREQUENCY,iq_samples_as_str)
+write_data_to_json(data)
+#######
+
 running = True
-smps = 0
-
-
-step = 0
-screen_id = 0
-
-samples_buffer = mod_am1(t, wave_freq) 
-# samples_buffer = mod_am(t, 100e3) + mod_am(t, -50e3)
+#####  Main Tx Loop
 while running:
     try:
         streamer.send(samples_buffer, metadata)
     except KeyboardInterrupt:
         running = False
         print("Exiting...")
+#######
